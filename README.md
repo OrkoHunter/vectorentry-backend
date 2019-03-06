@@ -1,5 +1,7 @@
-# vectorentry-server
+# vectorentry-backend
 Backend for the VectorEntry keyboard with features like correction and prediction
+
+Hosted - https://vectorentry-backend.herokuapp.com/
 
 ## How to run?
 
