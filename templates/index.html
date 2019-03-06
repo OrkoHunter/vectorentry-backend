@@ -1,0 +1,75 @@
+<html>
+    <head>
+        <title>VectorEntry Backend</title>
+
+        <script
+          src="https://code.jquery.com/jquery-3.3.1.min.js"
+          integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+          crossorigin="anonymous"></script>
+
+
+        <style>
+         .query-div {
+             text-align: center;
+             margin-top: 4em;
+             position: relative;
+             width: 70%;
+             margin-left: 15%;
+         }
+         .query-div input {
+             font-size: 2.5em;
+             font-family: Roboto, Titillium, Inconsolata, sans-serif;
+             width: 90%;
+             line-height: 1.5em;
+             vertical-align: middle;
+             horizontal-align: middle;
+             display: inline-block;
+             padding: 0;
+         }
+         .result-div {
+             margin-top: 5em;
+             text-align: left;
+             margin-left: 20%;
+             line-height: 1.5em;
+             font-size: 1.4em;
+         }
+
+        </style>
+
+    </head>
+    <body>
+        <div class="query-div">
+          <input type="text" placeholder="Enter text" id="query"></input>
+          <br>
+          <span>Press Enter to execute...</span>
+        </div>
+        <div class="result-div">
+          <h1>Result</h1>
+          <span id="result-span"></span>
+        </div>
+    </body>
+
+        <script>
+
+          // Keypress logic
+          var ele = $('.query-div>input');
+          ele.keypress(function (e) {
+              var key = e.which;
+              if (key == 13) {
+                  // Get the text of the input box
+                  queryString = ele.val();
+                  executeEngine(queryString);
+              }
+          })
+
+          function executeEngine(queryString) {
+              console.log(queryString);
+              $.get( '/result?query=' + queryString, function(data) {
+                  console.log("Received response from server");
+                  $('#result-span').html(data);
+              } )
+          }
+
+        </script>
+
+</html>
