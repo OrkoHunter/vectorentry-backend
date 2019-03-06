@@ -7,4 +7,4 @@ Backend for the VectorEntry keyboard with features like correction and predictio
 python3 app.py
 ```
 
-Open `localhost:5000` to interact with the server.
+Open `localhost:8080` to interact with the server.
