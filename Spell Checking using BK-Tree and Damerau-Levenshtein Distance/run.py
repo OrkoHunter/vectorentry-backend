@@ -7,8 +7,11 @@ from bktree import BKTree
 def run():
     tree = pickle_load("eng_tree")
     while True:
-        user_input = input("Write the word you want spellchecked:")
+        user_input = input("Write the word you want spellchecked :: ")
+        N = int(input("Enter N :: "))
         if user_input != "":
-            print(tree.find(user_input, 3))
+            print(tree.find(user_input, N))
         else:
             break
+
+run()

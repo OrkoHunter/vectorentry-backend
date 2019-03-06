@@ -43,9 +43,10 @@ class BKTree:
                 found.append((dist, candidate))
             
             if children:                          ##??
-                lower = dist - n
+            	## check for range [d-n, d+n)
+                lower = dist - n   
                 upper = dist + n
-                candidates.extend(c for d, c in children.items() if lower <= d <= upper)
+                candidates.extend(c for d, c in children.items() if abs(lower) <= d < upper)
 
         found.sort()
         return found
