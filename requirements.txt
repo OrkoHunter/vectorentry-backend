@@ -1,3 +1,4 @@
 symspellpy
 flask
 gunicorn
+pyxdameraulevenshtein
