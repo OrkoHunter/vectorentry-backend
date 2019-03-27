@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 
-from SymSpellDemo import SpellCorrect
+# from SymSpellDemo import SpellCorrect
+
+import SpellingCorrectionUsingBiTriGrams
 
 app = Flask(__name__)
 
@@ -10,7 +12,9 @@ spell_correct = None
 def main():
     global spell_correct
 
-    spell_correct = SpellCorrect()
+    # spell_correct = SpellCorrect()
+    spell_correct = SpellingCorrectionUsingBiTriGrams.WordSpellingCorrection('en_wikinews.txt', 'wiki_dump', 'token_cnts_wiki.json')
+    
     return render_template("index.html")
 
 
@@ -20,7 +24,7 @@ def result():
 
     word = request.args.get("query")
     # Process the word
-    return spell_correct.spelling_correct(word)
+    return SpellingCorrectionUsingBiTriGrams.SpellingCorrectionUsingNGrams.get_spelling_correction(word, spell_correct)
 
 
 if __name__ == "__main__":
