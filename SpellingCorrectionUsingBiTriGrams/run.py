@@ -14,5 +14,5 @@ def pickle_load(filename):
 
 # pickle_dump(BKTree(items_dict = load_words('words_dictionary')), 'eng_tree')
 
-def run(word, tree, max_edit_distance = 2):
-    return [tree.find(word, x) for x in range(max_edit_distance + 1)]
+# def run(word, tree, max_edit_distance = 2):
+#     return [tree.find(word, x) for x in range(max_edit_distance + 1)]

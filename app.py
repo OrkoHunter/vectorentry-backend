@@ -2,7 +2,9 @@ from flask import Flask, render_template, request, jsonify
 
 # from SymSpellDemo import SpellCorrect
 
-import SpellingCorrectionUsingBiTriGrams
+from SpellingCorrectionUsingBiTriGrams import SpellingCorrectionUsingNGrams
+
+import pickle
 
 app = Flask(__name__)
 
@@ -12,8 +14,12 @@ spell_correct = None
 def main():
     global spell_correct
 
+    # with open('word_vocab.pkl', 'rb') as f:
+    #     word2idx, idx2word = pickle.load(f)
+    # pickle_dump(BKTree(items_dict = word2idx), 'wiki_dump.pkl')
+
     # spell_correct = SpellCorrect()
-    spell_correct = SpellingCorrectionUsingBiTriGrams.WordSpellingCorrection('en_wikinews.txt', 'wiki_dump', 'token_cnts_wiki.json')
+    spell_correct = SpellingCorrectionUsingNGrams.WordSpellingCorrection('en_wikinews.txt', 'wiki_dump.pkl', 'token_cnts_wiki.json')
     
     return render_template("index.html")
 
@@ -24,7 +30,7 @@ def result():
 
     word = request.args.get("query")
     # Process the word
-    return SpellingCorrectionUsingBiTriGrams.SpellingCorrectionUsingNGrams.get_spelling_correction(word, spell_correct)
+    return SpellingCorrectionUsingNGrams.get_spelling_correction(word, spell_correct)
 
 
 if __name__ == "__main__":

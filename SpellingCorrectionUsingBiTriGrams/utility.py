@@ -5,10 +5,6 @@ import os
 import json
 import pickle
 
-dirpath = os.path.dirname('__file__')
-
-# from bktree import BKTree
-
 def distance_function(str1, str2):
     return damerau_levenshtein_distance(str1, str2)
 
@@ -22,17 +18,7 @@ def load_words(filename):
 
 def pickle_dump(tree, filename):
     try:
-        filepath = os.path.join(dirpath, filename + '.pkl')
-        with open(filepath, 'wb') as f:
+        with open(filename, 'wb') as f:
             pickle.dump(tree, f)
-    except Exception as e:
-        print(str(e))
-
-def pickle_load(filename):
-    try:
-        filepath = os.path.join(dirpath, filename + '.pkl')
-        with open(filepath, 'rb') as f:
-            tree = pickle.load(f)
-        return tree
     except Exception as e:
         print(str(e))

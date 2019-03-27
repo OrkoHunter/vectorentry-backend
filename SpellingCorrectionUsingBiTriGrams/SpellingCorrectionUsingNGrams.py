@@ -5,7 +5,7 @@
 
 # In[180]:
 
-
+import sys
 import os
 import json
 import re
@@ -17,14 +17,11 @@ from collections import defaultdict
 
 import numpy as np
 
-from run import run
-from utility import pickle_load
-from bktree import BKTree
+from .bktree import BKTree
 
 import nltk
 from nltk import ngrams, bigrams, trigrams, FreqDist
 from nltk.stem import WordNetLemmatizer 
-
 
 # ### STEPS :: 
 # - First sentence tokenizer to separate the sentences and add **SOS** and **EOS** token to each sentence.
@@ -33,7 +30,6 @@ from nltk.stem import WordNetLemmatizer
 # ### Will use Vocab class in building BKTree 
 
 # In[220]:
-
 
 class Vocab:
     def __init__(self):
@@ -177,7 +173,9 @@ class WordSpellingCorrection:
         self.tokenizer = tokenizer
         self.token_pattern = token_pattern
         
-        self.tree = pickle_load(self.filepath_bk_tree)
+        # sys.path.append('SpellingCorrectionUsingNGrams/')
+        with open(self.filepath_bk_tree, 'rb') as f:
+            self.tree = pickle.load(f)
 
         self.token_cnts = None
         self.bi_pre_token_cnts = None
@@ -222,7 +220,7 @@ class WordSpellingCorrection:
         """Returns candidate word for a given input word. 
         Currently based on using edit-distance...
         """
-        return [i[1] for x in run(word, self.tree, max_edit_distance = max_edit_distance) for i in x]
+        return [i[1] for x in [self.tree.find(word, x) for x in range(max_edit_distance + 1)] for i in x]
     
     def build_preprocessor(self):    # No preprocessing for now, can use that from my kaggle kernel
         """Return a function that preprocesses the doc"""
@@ -488,9 +486,13 @@ class WordSpellingCorrection:
 # vocab = load_from_words_file('google-10000-english_vocab.pkl', 'google-10000-english.txt', False)
 
 def get_spelling_correction(sent, spellCorr, max_edit_dis = 2):
-	return spellCorr.spelling_correction(sent, 2)
+    return spellCorr.spelling_correction(sent, 2)
 
 
 if __name__ == '__main__':
-	spellCorr = WordSpellingCorrection('en_wikinews.txt', 'wiki_dump', 'token_cnts_wiki.json')
-	print(get_spelling_correction("You hut is beautiful", spellCorr))
+    # with open('word_vocab.pkl', 'rb') as f:
+    #     word2idx, idx2word = pickle.load(f)
+    # pickle_dump(BKTree(items_dict = word2idx), 'wiki_dump.pkl')
+
+    spellCorr = WordSpellingCorrection('en_wikinews.txt', 'wiki_dump.pkl', 'token_cnts_wiki.json')
+    print(get_spelling_correction("You hut is beautiful", spellCorr))

@@ -1,6 +1,6 @@
 from collections import deque
 
-from utility import distance_function
+from .utility import distance_function
 
 class BKTree:
     def __init__(self, items_list = [], items_dict = {}):
