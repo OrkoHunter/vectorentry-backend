@@ -155,7 +155,7 @@ class WordSpellingCorrection:
         filepath_corpus,
         filepath_bk_tree, 
         filepath_token_cnts,
-        vocab = None,
+        vocab_path,
         ngram_range = (2, 3), 
         token_pattern = r"(?u)\b\w\w+\b",
         preprocessor = None, 
@@ -165,7 +165,7 @@ class WordSpellingCorrection:
     ):
         self.filepath_corpus = filepath_corpus
         self.filepath_bk_tree = filepath_bk_tree
-        self.vocab = vocab     
+        self.vocab_path = vocab_path     
         self.ngram_range = ngram_range
         self.stop_words = stop_words  
         self.lowercase = lowercase
@@ -173,10 +173,21 @@ class WordSpellingCorrection:
         self.tokenizer = tokenizer
         self.token_pattern = token_pattern
         
-        # sys.path.append('SpellingCorrectionUsingNGrams/')
-        with open(self.filepath_bk_tree, 'rb') as f:
-            self.tree = pickle.load(f)
+        with open(vocab_path, 'rb') as f:
+            word2idx, idx2word = pickle.load(f)
 
+        self.vocab_size = len(word2idx)
+
+        try:
+            with open(self.filepath_bk_tree, 'rb') as f:
+                self.tree = pickle.load(f)
+
+        except Exception as e:
+            pickle_dump(BKTree(items_dict = word2idx), self.filepath_bk_tree)
+            
+            with open(self.filepath_bk_tree, 'rb') as f:
+                self.tree = pickle.load(f)
+                
         self.token_cnts = None
         self.bi_pre_token_cnts = None
         self.bi_post_token_cnts = None
@@ -486,7 +497,7 @@ class WordSpellingCorrection:
 # vocab = load_from_words_file('google-10000-english_vocab.pkl', 'google-10000-english.txt', False)
 
 def get_spelling_correction(sent, spellCorr, max_edit_dis = 2):
-    return spellCorr.spelling_correction(sent, 2)
+    return spellCorr.spelling_correction(sent, max_edit_dis)
 
 
 if __name__ == '__main__':
@@ -494,5 +505,5 @@ if __name__ == '__main__':
     #     word2idx, idx2word = pickle.load(f)
     # pickle_dump(BKTree(items_dict = word2idx), 'wiki_dump.pkl')
 
-    spellCorr = WordSpellingCorrection('en_wikinews.txt', 'wiki_dump.pkl', 'token_cnts_wiki.json')
+    spellCorr = WordSpellingCorrection('en_wikinews.txt', 'wiki_dump.pkl', 'token_cnts_wiki.json', 'word_vocab.pkl')
     print(get_spelling_correction("You hut is beautiful", spellCorr))
