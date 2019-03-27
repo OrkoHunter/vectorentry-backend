@@ -2,3 +2,5 @@ symspellpy
 flask
 gunicorn
 pyxdameraulevenshtein
+nltk
+numpy
