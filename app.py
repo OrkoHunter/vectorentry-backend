@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+import os
 
 # from SymSpellDemo import SpellCorrect
 
@@ -20,7 +21,7 @@ def main():
 
     # spell_correct = SpellCorrect()
     spell_correct = SpellingCorrectionUsingNGrams.WordSpellingCorrection('en_wikinews.txt', 'wiki_dump.pkl', 'token_cnts_wiki.json', 'word_vocab.pkl')
-    
+
     return render_template("index.html")
 
 
@@ -35,5 +36,5 @@ def result():
 
 if __name__ == "__main__":
     app.config.update(TEMPLATES_AUTO_RELOAD = True)
-    port = int(os.environ['PORT'])
-    app.run(host = 'localhost', port = port, debug = True)
+    # port = int(os.environ['PORT'])
+    app.run(debug = True)
