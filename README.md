@@ -5,8 +5,24 @@ Hosted - https://vectorentry-backend.herokuapp.com/
 
 ## How to run?
 
-``` shell
+Install dependencies
+
+```shell
+pip3 install -r requirements.txt
+```
+
+and download nltk corpora
+
+```python
+>>> import nltk
+>>> nltk.download("wordnet")
+```
+
+run the app ->
+
+```shell
 python3 app.py
 ```
 
-Open `localhost:8080` to interact with the server.
+Open the URL in browser to interact with the server.
+
