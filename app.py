@@ -9,7 +9,10 @@ import pickle
 
 app = Flask(__name__)
 
-spell_correct = SpellingCorrectionUsingNGrams.WordSpellingCorrection('en_wikinews.txt', 'SpellingCorrectionUsingBiTriGrams/wiki_dump.pkl', 'token_cnts_wiki.json', 'word_vocab.pkl')
+spell_correct = SpellingCorrectionUsingNGrams.WordSpellingCorrection(None, 
+    'SpellingCorrectionUsingBiTriGrams/wiki_dump.pkl', 
+    'token_cnts_wiki.json', 
+    'SpellingCorrectionUsingBiTriGrams/word_vocab.pkl')
 
 @app.route("/")
 def main():
