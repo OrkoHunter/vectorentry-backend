@@ -27,7 +27,7 @@
              padding: 0;
          }
          .result-div {
-             margin-top: 5em;
+             margin-top: 2em;
              text-align: left;
              margin-left: 20%;
              line-height: 1.5em;
@@ -42,7 +42,7 @@
     		<img src = "static/uploads/logo.png" height=500>
     	</center>
         <div class="query-div">
-          <input type="text" placeholder="Enter text" value = "you loko beatuful" 
+          <input type="text" placeholder="Enter text" value = "you loko beatuful"
           id="query"></input>
           <br>
           <span>Press Enter to execute...</span>
@@ -60,6 +60,8 @@
           ele.keypress(function (e) {
               var key = e.which;
               if (key == 13) {
+                  // Rename result text to pending
+                  $('#result-span').html("Processing result...")
                   // Get the text of the input box
                   queryString = ele.val();
                   executeEngine(queryString);
