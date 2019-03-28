@@ -1,12 +1,13 @@
 # DamerauLevenshtein
 from pyxdameraulevenshtein import damerau_levenshtein_distance, normalized_damerau_levenshtein_distance
+from Levenshtein import distance
 
 import os
 import json
 import pickle
 
-def distance_function(str1, str2):
-    return damerau_levenshtein_distance(str1, str2)
+def distance_function(str1, str2, transposition=True):
+    return damerau_levenshtein_distance(str1, str2) if transposition else distance(str1, str2)
 
 def load_words(filename):
     try:

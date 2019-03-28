@@ -2,22 +2,26 @@ from collections import deque
 
 from .utility import distance_function
 
-class BKTree:
-    def __init__(self, items_list = [], items_dict = {}):
+class BKTree(object):
+    def __init__(self, items_list = None, items_dict = None):
+        if items_list is None:
+            items_list = []
+
+        if items_dict is None:
+            items_dict = {} 
+
         self.tree = None
         
-        _add = self.add
-        
         for item in items_list:
-            _add(item)
+            self.add(item)
         
         for item in items_dict:
-            _add(item)
+            self.add(item)
     
     def add(self, item):
         node = self.tree
         
-        if node is None:
+        if self.tree is None:
             self.tree = (item, {})
             return
         

@@ -1,4 +1,3 @@
-
 # coding: utf-8
 
 # ## Using Bigram-Trigram for real-word error detection
@@ -18,6 +17,7 @@ from collections import defaultdict
 import numpy as np
 
 from .bktree import BKTree
+from .utility import pickle_dump
 
 import nltk
 from nltk import ngrams, bigrams, trigrams, FreqDist
@@ -32,11 +32,21 @@ from nltk.stem import WordNetLemmatizer
 # In[220]:
 
 class Vocab:
-    def __init__(self):
-        self.word2idx = {}
-        self.idx2word = {}
-        self.word2cnt = {}
-        self.idx = 0
+    def __init__(self, word2idx = None, idx2word = None):
+        if word2idx is not None:
+            self.word2idx = word2idx
+            self.idx2word = idx2word if idx2word is not None else {idx : word for word, idx in word2idx.items()}
+
+        elif idx2word is not None:
+            self.idx2word = idx2word
+            self.word2idx = word2idx if word2idx is not None else {word : idx for idx, word in word2idx.items()}
+
+        else:
+            self.word2idx = {}
+            self.idx2word = {}
+            self.word2cnt = {}
+            
+        self.idx = len(self.word2idx) - 1
 
     def add_word(self, word):
         if word not in self.word2idx:
@@ -147,8 +157,6 @@ def load_from_words_file(vocab_path, corpus_path, load = True):
 
 # pickle_dump(BKTree(items_dict = load_words('google_1000_english_freq')), 'eng_tree_10K')
 
-
-
 class WordSpellingCorrection:
     def __init__(
         self,
@@ -176,7 +184,8 @@ class WordSpellingCorrection:
         with open(vocab_path, 'rb') as f:
             word2idx, idx2word = pickle.load(f)
 
-        self.vocab_size = len(word2idx)
+        self.vocab = Vocab(word2idx, idx2word)
+        self.vocab_size = len(self.vocab)
 
         try:
             with open(self.filepath_bk_tree, 'rb') as f:
@@ -227,7 +236,14 @@ class WordSpellingCorrection:
 
             self.build_ngrams_count_from_corpus()
 
-    def get_candidate_words(self, word, max_edit_distance = 3):
+
+    # def update_vocab(self, text):
+    #     for word in unigram(text):
+    #         if word not in self.vocab:
+    #             self.vocab.add_word()
+    #     take bigrams trigrams and update dictionaries
+
+    def get_candidate_words(self, word, max_edit_distance):
         """Returns candidate word for a given input word.
         Currently based on using edit-distance...
         """
@@ -413,7 +429,7 @@ class WordSpellingCorrection:
 
                 token = " ".join([pre, word])
                 tokens_cnt = self.token_cnts.get(token, 0)
-                return self.token_cnts.get(token, 0)/(self.bi_pre_token_cnts.get(pre, 1))
+                return (self.token_cnts.get(token, 0))/(self.bi_pre_token_cnts.get(pre, 1))
 #                 return (tokens_cnt+1)/(self.bi_pre_token_cnts.get(pre, 0)+len(self.vocab))
 
             else:
@@ -423,7 +439,7 @@ class WordSpellingCorrection:
                 token = " ".join([word, post])
                 tokens_cnt = self.token_cnts.get(token, 0)
 #                 return self.token_cnts[token]/self._count_ngram(post, pre = False, tri = False) if token in self.token_cnts else 0
-                return self.token_cnts.get(token, 0)/(self.bi_pre_token_cnts.get(post, 1))
+                return (self.token_cnts.get(token, 0))/(self.bi_pre_token_cnts.get(post, 1))
 #                 return (tokens_cnt+1)/(self.bi_post_token_cnts.get(post, 0)+len(self.vocab))
 
         elif len(words) == 3:
@@ -434,57 +450,136 @@ class WordSpellingCorrection:
             token = " ".join([pre, word, post])
             tokens_cnt = self.token_cnts.get(token, 0)
 #             return self.token_cnts[token]/self._count_ngram(pre, post, pre = False, tri = True) if token in self.token_cnts else 0
-            return self.token_cnts.get(token, 0)/(self.bi_pre_token_cnts.get(' '.join([pre, post]), 1))
+            return (self.token_cnts.get(token, 0))/(self.bi_pre_token_cnts.get(' '.join([pre, post]), 1))
 #             return (tokens_cnt+1)/(self.tri_token_cnts.get(' '.join([pre, post]), 0)+len(self.vocab))
 
-    def _detect_real_word(self, word, pre, post, max_edit_dis, scores):
+    def _detect_real_word(self, word, pre, post, candidates, scores, alpha):
         lemmatizer = WordNetLemmatizer()
         lemma_word = lemmatizer.lemmatize(word)
 
-        score = 0.2 * self._score(False, word, post) + 0.2 * self._score(True, pre, word) + 0.6 * self._score(None, pre, word, post)
-        lemma_score = 0.2 * self._score(False, lemma_word, post) + 0.2 * self._score(True, pre, lemma_word) + 0.6 * self._score(None, pre, lemma_word, post)
+        score = scores[candidates.index(word)] if word in candidates else 0
+        # score = (alpha**2) * self._score(True, pre, word) + (alpha**2) * self._score(False, word, post) + alpha * self._score(None, pre, word, post)
+        lemma_score = (alpha**2) * self._score(True, pre, lemma_word) + (alpha**2) * self._score(False, lemma_word, post) + alpha * self._score(None, pre, lemma_word, post)
 
         print()
         print(word, lemma_word)
-        print(score, lemma_score, max(scores))
+        
+        if scores:
+            print(score, lemma_score, max(scores))
 
         if score == 0:
             if lemma_score == 0:
-                return None
+                return (candidates[np.argmax(scores)], max(scores))
             else:
-                return lemma_word
+                return (lemma_word, lemma_score)
         else:
-            if lemma_score < 0.1 * max(scores):
-                return None
+            if score < 0.05 * max(scores):
+                return (candidates[np.argmax(scores)], max(scores))
+            elif lemma_score >= 0.05 * max(scores):
+                return (lemma_word, lemma_score)
             else:
-                return word
+                return (word, score)
 
 
-    def _rank_and_replace_word_candidates(self, word, pre, post, max_edit_dis):
-        candidates = self.get_candidate_words(word, max_edit_dis)
+    def _rank_and_replace_word_candidates(self, word, pre, post, max_edit_dis, alpha = 0.6):
+        multiple_candidates = list()
 
-        scores = [0.2 * self._score(False, candidate, post) + 0.2 * self._score(True, pre, candidate) +
-                  0.6 * self._score(None, pre, candidate, post)
-                  for candidate in candidates]
+        max_scores = list()
 
-        print(*zip(candidates, scores))
-        print(candidates[np.argmax(scores)])
+        for i in range(1, max_edit_dis+1):
+            candidates = self.get_candidate_words(word, i)
+            multiple_candidates.append(candidates)
 
-        correct = self._detect_real_word(word, pre, post, max_edit_dis, scores)
+            scores = [(alpha**2) * self._score(False, candidate, post) + (alpha**2) * self._score(True, pre, candidate) +
+                      alpha * self._score(None, pre, candidate, post)
+                      for candidate in candidates]
 
-        return candidates[np.argmax(scores)] if correct is None else correct
+            correct = self._detect_real_word(word, pre, post, candidates, scores, alpha) if candidates else (word, 0)
+            max_scores.append(correct)
+            
+            if candidates:
+                print(*zip(candidates, scores))
+                print(candidates[np.argmax(scores)])
 
-    def spelling_correction(self, sentence, max_edit_dis = 2):
+        if(len(max_scores) == 2):        #max_edit_dis=2
+            first_sc, second_sc = max_scores
+            return second_sc[0] if first_sc[1] < 0.1*second_sc[1] else first_sc[0]
+
+    
+    def _detect_real_word_2(self, word, pre, pre_, candidates, scores, alpha):
+        lemmatizer = WordNetLemmatizer()
+        lemma_word = lemmatizer.lemmatize(word)
+        
+        score = scores[candidates.index(word)] if word in candidates else 0
+        lemma_score = (alpha**2) * self._score(False, pre, lemma_word) + alpha * self._score(None, pre_, pre, lemma_word)
+
+        print()
+        print(word, lemma_word)
+        
+        if scores:
+            print(score, lemma_score, max(scores))
+
+        if score == 0:
+            if lemma_score == 0:
+                return (candidates[np.argmax(scores)], max(scores))
+            else:
+                return (lemma_word, lemma_score)
+        else:
+            if score < 0.05 * max(scores):
+                return (candidates[np.argmax(scores)], max(scores))
+            elif lemma_score >= 0.05 * max(scores):
+                return (lemma_word, lemma_score)
+            else:
+                return (word, score) 
+
+    def _rank_and_replace_word_candidates_2(self, word, pre, pre_, max_edit_dis, alpha = 0.6):
+        multiple_candidates = list()
+
+        max_scores = list()
+
+        for i in range(1, max_edit_dis+1):
+            candidates = self.get_candidate_words(word, i)
+            multiple_candidates.append(candidates)
+
+            scores = [(alpha**2) * self._score(False, pre, candidate) + alpha * self._score(None, pre_, pre, candidate) 
+            for candidate in candidates]
+
+            # print(candidates)
+            correct = self._detect_real_word_2(word, pre, pre_, candidates, scores, alpha) if candidates else (word, 0)
+            max_scores.append(correct)
+
+            if candidates:
+                print(*zip(candidates, scores))
+                print(candidates[np.argmax(scores)])
+
+        if(len(max_scores) == 2):        #max_edit_dis=2
+            first_sc, second_sc = max_scores
+            return second_sc[0] if first_sc[1] < 0.1*second_sc[1] else first_sc[0]
+        else:                            #max_edit_dis=1
+            return max_scores[0][0]
+
+
+    def spelling_correction(self, sentence, max_edit_dis):
         analyzer = self.build_analyzer()
         preprocess = self.build_preprocessor()
         tokenize = self.build_tokenizer()
 
         tokens = tokenize('SOS ' + preprocess(sentence) + ' EOS')
 
-        for i in range(2, len(tokens) - 1):
+        for i in range(2, len(tokens)-1):
+            print("="*80)
+            print(tokens[i-2], tokens[i-1], tokens[i])
+            tokens[i] = self._rank_and_replace_word_candidates_2(tokens[i], tokens[i-1], tokens[i-2], max_edit_dis = 1)
+            print(tokens[i])
+
+        print("="*80)
+        print(tokens)
+        print("="*80)
+
+        for i in range(2, len(tokens)-1):
             print("="*80)
             print(tokens[i-1], tokens[i], tokens[i+1])
-            tokens[i] = self._rank_and_replace_word_candidates(tokens[i], tokens[i - 1], tokens[i + 1], max_edit_dis)
+            tokens[i] = self._rank_and_replace_word_candidates(tokens[i], tokens[i-1], tokens[i+1], max_edit_dis)
             print(tokens[i])
 
         print("="*80)
@@ -492,11 +587,10 @@ class WordSpellingCorrection:
 
         return " ".join(tokens[1:-1])
 
-
 # vocab = load('wiki_vocab.pkl', 'wiki.train.tokens')
 # vocab = load_from_words_file('google-10000-english_vocab.pkl', 'google-10000-english.txt', False)
 
-def get_spelling_correction(sent, spellCorr, max_edit_dis = 2):
+def get_spelling_correction(sent, spellCorr, max_edit_dis):
     return spellCorr.spelling_correction(sent, max_edit_dis)
 
 
